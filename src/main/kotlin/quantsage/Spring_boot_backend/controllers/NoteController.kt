@@ -43,6 +43,7 @@ class NoteController(
 
             )
         )
+
         return note.toResponse()
     }
     @GetMapping
@@ -52,6 +53,10 @@ class NoteController(
         return repository.findByOwnerId(ObjectId(ownerId)).map{
             it.toResponse()
         }
+    }
+    @DeleteMapping(path = ["/{id}"])
+    fun deleteById(@PathVariable("id") id: String) {
+        repository.deleteById(ObjectId(id))
     }
 }
 
