@@ -1,5 +1,8 @@
 package quantsage.Spring_boot_backend.controllers
 
+import jakarta.validation.Valid
+import jakarta.validation.constraints.Email
+import jakarta.validation.constraints.Pattern
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -13,7 +16,12 @@ class AuthController(
 
 ) {
     data class AuthRequest(
+        @field:Email(message =  "Invalid email format.")
         val email: String,
+        @field:Pattern(
+            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{9,}\$",
+            message = "Password must be at least 9 characters long and contain at least 1 upper case or lower case."
+        )
         val password: String
 
     )
@@ -24,7 +32,7 @@ class AuthController(
 
     @PostMapping("/register")
     fun register(
-        @RequestBody body: AuthRequest
+        @Valid @RequestBody body: AuthRequest
     ){
         authService.register(body.email, body.password)
     }

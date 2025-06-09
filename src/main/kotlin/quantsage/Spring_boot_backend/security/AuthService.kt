@@ -1,9 +1,13 @@
 package quantsage.Spring_boot_backend.security
 
 import org.bson.types.ObjectId
+import org.springframework.http.HttpStatusCode
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.client.HttpStatusCodeException
+import org.springframework.web.server.ResponseStatusException
+import org.springframework.http.HttpStatus
 import quantsage.Spring_boot_backend.database.model.RefreshToken
 import quantsage.Spring_boot_backend.database.model.User
 import quantsage.Spring_boot_backend.database.repository.RefreshTokenRepository
@@ -24,6 +28,10 @@ class AuthService(
         val refreshToken: String,
     )
     fun register(email: String, password: String): User {
+        val user = userRepository.findByEmail(email.trim())
+        if(user != null) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "User already exists")
+        }
         return userRepository.save(
            User(
                email = email,
@@ -52,15 +60,15 @@ class AuthService(
     @Transactional
     fun refresh(refreshToken: String): TokenPair {
         if(!jwtService.validateRefreshToken(refreshToken)){
-            throw IllegalArgumentException("Invalid refresh token")
+            throw ResponseStatusException(HttpStatusCode.valueOf(401),"Invalid refresh token")
         }
         val userId = jwtService.getUserIdFromToken(refreshToken)
         val user = userRepository.findById(ObjectId(userId)).orElseThrow{
-            IllegalArgumentException("Invalid refresh token")
+            ResponseStatusException(HttpStatusCode.valueOf(404), "Invalid refresh token")
         }
         val hashed = hashToken(refreshToken)
         refreshTokenRepository.findByUserIdAndHashedToken(user.id, hashed)
-            ?: throw IllegalArgumentException("Refresh token not recognized(maybe used or expired)")
+            ?: throw ResponseStatusException(HttpStatusCode.valueOf(401), "Refresh token not recognized(maybe used or expired)")
 
         refreshTokenRepository.deleteByUserIdAndHashedToken(user.id, hashed)
 
